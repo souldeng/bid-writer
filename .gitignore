@@ -1,0 +1,16 @@
+# 环境变量（含 API Key，绝对不能上传）
+.env
+.env.local
+.env.*.local
+
+# Next.js
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
