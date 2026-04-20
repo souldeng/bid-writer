@@ -362,7 +362,7 @@ export default function Page(){
 
   return(
     <div style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif",background:T.paper,color:T.ink,fontSize:14}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500&display=swap');@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}@keyframes glow{0%,100%{opacity:1}50%{opacity:0.3}}@keyframes slideUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.1);border-radius:2px}input:focus,select:focus,textarea:focus{outline:none!important;border-color:${T.gold}!important;box-shadow:0 0 0 2px ${T.gold}22!important}button{cursor:pointer}`}</style>
+      <style suppressHydrationWarning>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}@keyframes glow{0%,100%{opacity:1}50%{opacity:0.3}}@keyframes slideUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}`}</style>
 
       {/* Sidebar */}
       <aside style={{width:220,minWidth:220,background:T.ink,display:"flex",flexDirection:"column",overflow:"hidden"}}>
