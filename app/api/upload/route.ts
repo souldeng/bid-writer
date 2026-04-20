@@ -1,6 +1,6 @@
 // app/api/upload/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { addDocument, listDocuments, type KBDoc } from "@/lib/rag";
+import { addDocument, type KBDoc } from "@/lib/rag";
 import { extractText } from "@/lib/extract";
 
 export const runtime = "nodejs"; // need fs APIs
