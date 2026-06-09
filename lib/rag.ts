@@ -1,4 +1,11 @@
 // lib/rag.ts
+<<<<<<< HEAD
+=======
+// ─── 轻量 RAG 引擎（无需外部向量数据库）──────────────────────
+// 用余弦相似度实现文本检索，向量存在内存 + localStorage（前端）
+// 服务端使用 globalThis 单例避免热重载丢数据
+
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
 export interface KBChunk {
   id: string;
   docId: string;
@@ -20,6 +27,10 @@ export interface KBDoc {
   summary: string;
 }
 
+<<<<<<< HEAD
+=======
+// ─── Server-side singleton store ───────────────────────────────
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
 declare global {
   // eslint-disable-next-line no-var
   var __ragChunks: KBChunk[] | undefined;
@@ -33,12 +44,20 @@ function getStore() {
   return { chunks: globalThis.__ragChunks, docs: globalThis.__ragDocs };
 }
 
+<<<<<<< HEAD
+=======
+// ─── Text chunking ─────────────────────────────────────────────
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
 export function chunkText(
   text: string,
   chunkSize = 400,
   overlap = 80
 ): { text: string; charStart: number; charEnd: number }[] {
   const chunks: { text: string; charStart: number; charEnd: number }[] = [];
+<<<<<<< HEAD
+=======
+  // Split on natural boundaries first
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   const paragraphs = text.split(/\n{2,}/);
   let buffer = "";
   let bufferStart = 0;
@@ -50,6 +69,10 @@ export function chunkText(
 
     if ((buffer + paraText).length > chunkSize && buffer.length > 0) {
       chunks.push({ text: buffer.trim(), charStart: bufferStart, charEnd: bufferStart + buffer.length });
+<<<<<<< HEAD
+=======
+      // Overlap: keep last `overlap` chars
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
       const overlapText = buffer.slice(-overlap);
       bufferStart = bufferStart + buffer.length - overlap;
       buffer = overlapText + "\n\n" + paraText;
@@ -65,19 +88,37 @@ export function chunkText(
   return chunks;
 }
 
+<<<<<<< HEAD
+=======
+// ─── Simple TF-IDF-like vector (bag of chars n-grams) ──────────
+// No external embedding API needed — works offline
+// Uses char bigrams + trigrams for Chinese text compatibility
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
 function textToVector(text: string): number[] {
   const normalized = text.toLowerCase().replace(/\s+/g, " ").slice(0, 1000);
   const dims = 512;
   const vec = new Float32Array(dims);
 
+<<<<<<< HEAD
+=======
+  // Char bigrams
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   for (let i = 0; i < normalized.length - 1; i++) {
     const code = (normalized.charCodeAt(i) * 31 + normalized.charCodeAt(i + 1)) % dims;
     vec[code] += 1;
   }
+<<<<<<< HEAD
+=======
+  // Char trigrams
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   for (let i = 0; i < normalized.length - 2; i++) {
     const code = (normalized.charCodeAt(i) * 961 + normalized.charCodeAt(i+1) * 31 + normalized.charCodeAt(i+2)) % dims;
     vec[code] += 0.7;
   }
+<<<<<<< HEAD
+=======
+  // Word-level tokens (space-split)
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   const words = normalized.split(/\s+/);
   for (const word of words) {
     let h = 5381;
@@ -85,6 +126,10 @@ function textToVector(text: string): number[] {
     vec[((h >>> 0) % dims)] += 2;
   }
 
+<<<<<<< HEAD
+=======
+  // L2 normalize
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   let norm = 0;
   for (let i = 0; i < dims; i++) norm += vec[i] * vec[i];
   norm = Math.sqrt(norm) || 1;
@@ -96,11 +141,22 @@ function textToVector(text: string): number[] {
 export function cosineSim(a: number[], b: number[]): number {
   let dot = 0;
   for (let i = 0; i < a.length; i++) dot += a[i] * b[i];
+<<<<<<< HEAD
   return dot;
 }
 
 export function addDocument(doc: KBDoc, rawText: string): void {
   const store = getStore();
+=======
+  return dot; // already normalized
+}
+
+// ─── Public API ────────────────────────────────────────────────
+
+export function addDocument(doc: KBDoc, rawText: string): void {
+  const store = getStore();
+  // Remove old doc if re-uploading same name
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   removeDocument(doc.id);
   store.docs.push(doc);
 
@@ -139,6 +195,10 @@ export function retrieve(query: string, topK = 5): KBChunk[] {
     score: cosineSim(qVec, chunk.vector),
   }));
   scored.sort((a, b) => b.score - a.score);
+<<<<<<< HEAD
+=======
+  // Deduplicate by document — max 2 chunks per doc
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   const docCount: Record<string, number> = {};
   const results: KBChunk[] = [];
   for (const { chunk, score } of scored) {

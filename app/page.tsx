@@ -117,17 +117,24 @@ function ProjectModal({project,onSave,onClose}:{project:Project|null;onSave:(p:P
   );
 }
 
+<<<<<<< HEAD
 // ── 【修复1】KBPanel：修复 input 重置 + 上传反馈 + 本地状态 ──
 function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>void;onKbChange:()=>void;}){
   const[docs,setDocs]=useState<KBDoc[]>([]);
   const[uploading,setUploading]=useState(false);
   const[uploadProgress,setUploadProgress]=useState<string>("");
+=======
+function KBPanel({onToast}:{onToast:(m:string,t:"ok"|"err"|"info")=>void}){
+  const[docs,setDocs]=useState<KBDoc[]>([]);
+  const[uploading,setUploading]=useState(false);
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   const[dragOver,setDragOver]=useState(false);
   const[selType,setSelType]=useState("policy");
   const[loading,setLoading]=useState(true);
   const fileRef=useRef<HTMLInputElement>(null);
 
   const fetchDocs=useCallback(async()=>{
+<<<<<<< HEAD
     try{
       const r=await fetch("/api/kb");
       const d=await r.json();
@@ -138,10 +145,15 @@ function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>v
     setLoading(false);
   },[]);
 
+=======
+    try{const r=await fetch("/api/kb");const d=await r.json();setDocs(d.docs||[]);}catch{}setLoading(false);
+  },[]);
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   useEffect(()=>{fetchDocs();},[fetchDocs]);
 
   const uploadFiles=async(files:FileList|null)=>{
     if(!files||!files.length)return;
+<<<<<<< HEAD
     // 【修复1a】立即重置 input，让同一文件可以重复选择
     if(fileRef.current)fileRef.current.value="";
 
@@ -201,10 +213,21 @@ function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>v
     if(fail>0&&ok===0){
       onToast(`${fail} 个文件上传失败，请查看上方提示`,"err");
     }
+=======
+    setUploading(true);let ok=0,fail=0;
+    for(const f of Array.from(files)){
+      const fd=new FormData();fd.append("file",f);fd.append("type",selType);
+      try{const r=await fetch("/api/upload",{method:"POST",body:fd});const d=await r.json();if(d.success)ok++;else{fail++;onToast(`「${f.name}」：${d.error}`,"err");}}
+      catch{fail++;onToast(`「${f.name}」网络错误`,"err");}
+    }
+    if(ok>0)onToast(`成功上传 ${ok} 个文件到知识库`,"ok");
+    setUploading(false);fetchDocs();
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   };
 
   const deleteDoc=async(id:string,name:string)=>{
     if(!confirm(`确定删除「${name}」？`))return;
+<<<<<<< HEAD
     try{
       const r=await fetch("/api/kb/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({docId:id})});
       if(r.ok){
@@ -216,6 +239,10 @@ function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>v
         onToast("删除失败，请重试","err");
       }
     }catch{onToast("删除失败，请检查网络","err");}
+=======
+    try{await fetch("/api/kb/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({docId:id})});onToast(`已删除「${name}」`,"ok");fetchDocs();}
+    catch{onToast("删除失败","err");}
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   };
 
   return(
@@ -230,12 +257,17 @@ function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>v
             <SLabel>文件类型</SLabel>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:14}}>
               {DOC_TYPES.map(t=>(
+<<<<<<< HEAD
                 <button key={t.value} onClick={()=>setSelType(t.value)}
                   style={{padding:"8px 10px",borderRadius:4,border:`0.5px solid ${selType===t.value?t.color:T.ink15}`,background:selType===t.value?t.bg:T.ink06,color:selType===t.value?t.color:T.ink70,fontFamily:"inherit",fontSize:12,fontWeight:selType===t.value?600:400,cursor:"pointer",textAlign:"left",transition:"all 0.12s"}}>
+=======
+                <button key={t.value} onClick={()=>setSelType(t.value)} style={{padding:"8px 10px",borderRadius:4,border:`0.5px solid ${selType===t.value?t.color:T.ink15}`,background:selType===t.value?t.bg:T.ink06,color:selType===t.value?t.color:T.ink70,fontFamily:"inherit",fontSize:12,fontWeight:selType===t.value?600:400,cursor:"pointer",textAlign:"left",transition:"all 0.12s"}}>
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
                   {t.label}
                 </button>
               ))}
             </div>
+<<<<<<< HEAD
 
             {/* 【修复2】上传区域：添加更好的视觉反馈 */}
             <div
@@ -284,6 +316,18 @@ function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>v
             )}
           </div>
 
+=======
+            <div onDragOver={e=>{e.preventDefault();setDragOver(true);}} onDragLeave={()=>setDragOver(false)}
+              onDrop={e=>{e.preventDefault();setDragOver(false);uploadFiles(e.dataTransfer.files);}}
+              onClick={()=>!uploading&&fileRef.current?.click()}
+              style={{border:`1.5px dashed ${dragOver?T.gold:T.ink15}`,borderRadius:6,padding:"28px 16px",textAlign:"center",cursor:uploading?"not-allowed":"pointer",background:dragOver?T.goldBg:T.ink06,transition:"all 0.15s"}}>
+              <div style={{fontSize:28,marginBottom:8}}>{uploading?"⏳":"📂"}</div>
+              <div style={{fontSize:13,color:T.ink,fontWeight:500,marginBottom:4}}>{uploading?"正在处理文件…":"点击选择 或 拖拽文件到此处"}</div>
+              <div style={{fontSize:11,color:T.ink40}}>PDF · DOCX · TXT · MD · 最大 10MB</div>
+              <input ref={fileRef} type="file" multiple accept=".pdf,.docx,.doc,.txt,.md" style={{display:"none"}} onChange={e=>uploadFiles(e.target.files)}/>
+            </div>
+          </div>
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
           <div style={{background:T.goldBg,borderRadius:8,padding:16,border:`0.5px solid ${T.goldLight}`}}>
             <div style={{fontSize:12,fontWeight:600,color:T.gold,marginBottom:8}}>💡 上传建议</div>
             <div style={{fontSize:12,color:T.ink70,lineHeight:1.9}}>
@@ -293,6 +337,7 @@ function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>v
               <div>· 文件越精准，生成质量越高</div>
             </div>
           </div>
+<<<<<<< HEAD
 
           {/* 【新增】当前版本说明 */}
           <div style={{padding:"10px 14px",background:T.ink06,borderRadius:6,border:`0.5px solid ${T.ink15}`,fontSize:11,color:T.ink40,lineHeight:1.7}}>
@@ -342,6 +387,38 @@ function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>v
                   );
                 })
             }
+=======
+        </div>
+
+        <div style={{background:"#fff",borderRadius:8,border:`0.5px solid ${T.ink15}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{padding:"14px 18px",borderBottom:`0.5px solid ${T.ink15}`,display:"flex",alignItems:"center"}}>
+            <span style={{fontSize:13,fontWeight:600,flex:1}}>已上传文件</span>
+            <Badge color="gray">{docs.length} 个文件</Badge>
+          </div>
+          <div style={{flex:1,overflowY:"auto"}}>
+            {loading?<div style={{padding:24,textAlign:"center",color:T.ink40,fontSize:13}}>加载中…</div>
+            :docs.length===0?<div style={{padding:40,textAlign:"center"}}><div style={{fontSize:32,marginBottom:10}}>📭</div><div style={{fontSize:13,color:T.ink40}}>知识库为空，上传文件后 AI 生成质量将显著提升</div></div>
+            :docs.map(doc=>{
+              const ti=DOC_TYPES.find(t=>t.value===doc.type)||DOC_TYPES[3];
+              const icon=doc.name.endsWith(".pdf")?"📕":doc.name.endsWith(".docx")||doc.name.endsWith(".doc")?"📘":"📄";
+              return(
+                <div key={doc.id} style={{padding:"14px 18px",borderBottom:`0.5px solid ${T.ink06}`,display:"flex",gap:12,alignItems:"flex-start"}}>
+                  <div style={{fontSize:22,marginTop:2}}>{icon}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                      <span style={{fontSize:13,fontWeight:500,color:T.ink,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:220}}>{doc.name}</span>
+                      <span style={{fontSize:10,padding:"1px 7px",borderRadius:10,background:ti.bg,color:ti.color,fontWeight:500,flexShrink:0}}>{ti.label}</span>
+                    </div>
+                    <div style={{fontSize:11,color:T.ink40,lineHeight:1.5,marginBottom:4}}>{doc.summary}</div>
+                    <div style={{display:"flex",gap:10,fontSize:11,color:T.ink40}}>
+                      <span>{fmtSize(doc.size)}</span><span>·</span><span>{doc.chunkCount} 片段</span><span>·</span><span>{fmtDate(doc.uploadedAt)}</span>
+                    </div>
+                  </div>
+                  <button onClick={()=>deleteDoc(doc.id,doc.name)} style={{background:"none",border:"none",cursor:"pointer",color:T.ink40,fontSize:16,padding:4,borderRadius:3}} title="删除">🗑</button>
+                </div>
+              );
+            })}
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
           </div>
         </div>
       </div>
@@ -451,7 +528,11 @@ export default function Page(){
   useEffect(()=>{refreshKb();},[refreshKb]);
 
   const showToast=useCallback((msg:string,type:"ok"|"err"|"info"="info")=>{
+<<<<<<< HEAD
     setToast({msg,type});clearTimeout(_tt);_tt=setTimeout(()=>setToast(null),4000);
+=======
+    setToast({msg,type});clearTimeout(_tt);_tt=setTimeout(()=>setToast(null),3000);
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
   },[]);
 
   const buildPrompt=useCallback((id:string,variant?:string)=>{
@@ -550,6 +631,7 @@ export default function Page(){
           {kbCount>0&&<span style={{fontSize:11,color:T.blue,padding:"3px 10px",background:T.blueBg,borderRadius:20,cursor:"pointer"}} onClick={()=>setView("kb")}>📚 知识库 {kbCount} 个文件</span>}
         </header>
 
+<<<<<<< HEAD
         {/* 【修复3】KBPanel 传入 onKbChange 回调 */}
         {view==="kb"&&(
           <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
@@ -559,6 +641,9 @@ export default function Page(){
             />
           </div>
         )}
+=======
+        {view==="kb"&&<div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}><KBPanel onToast={(m,t)=>{showToast(m,t);refreshKb();}}/></div>}
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
         {view==="export"&&<div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}><ExportPanel project={project} chapters={chapters}/></div>}
 
         {view==="workspace"&&(

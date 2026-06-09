@@ -2,7 +2,11 @@
 import { NextRequest } from "next/server";
 import { retrieve, buildRagContext } from "@/lib/rag";
 
+<<<<<<< HEAD
 export const runtime = "nodejs";
+=======
+export const runtime = "nodejs"; // need globalThis store from rag.ts
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,7 +30,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+<<<<<<< HEAD
     // RAG 检索
+=======
+    // ── RAG: retrieve relevant chunks ──────────────────────────
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
     let ragContext = "";
     let ragSources: string[] = [];
     if (useRag && chapterLabel) {
@@ -38,8 +46,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
+<<<<<<< HEAD
     const userMessage = prompt + ragContext;
 
+=======
+    // ── Build final user message ───────────────────────────────
+    const userMessage = prompt + ragContext;
+
+    // ── Call Doubao API (streaming) ────────────────────────────
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
     const doubaoResp = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -73,10 +88,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+<<<<<<< HEAD
+=======
+    // ── Stream response back to client ─────────────────────────
+    // First, send RAG metadata as a special event
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       async start(controller) {
+<<<<<<< HEAD
+=======
+        // Send RAG source info first
+>>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
         if (ragSources.length > 0) {
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ rag: ragSources })}\n\n`)
