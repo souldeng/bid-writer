@@ -1,9 +1,4 @@
 // lib/extract.ts
-<<<<<<< HEAD
-=======
-// 从上传文件中提取纯文本
-
->>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
 export async function extractText(
   buffer: Buffer,
   filename: string
@@ -16,10 +11,6 @@ export async function extractText(
 
   if (ext === "pdf") {
     try {
-<<<<<<< HEAD
-=======
-      // Dynamic import to avoid edge runtime issues
->>>>>>> 58e23eafe1172b121ce3e2f387b160dc55300a8a
       const pdfParse = (await import("pdf-parse")).default;
       const data = await pdfParse(buffer);
       return data.text || "";
