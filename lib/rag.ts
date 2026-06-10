@@ -44,12 +44,13 @@ function memStore() {
 }
 
 // ── KV 操作 ────────────────────────────────────────────────────
+// webpackIgnore 告知 webpack 跳过此 import，避免构建时报 module-not-found
 async function kvGet<T>(key: string): Promise<T | null> {
-  const { kv } = await import("@vercel/kv");
+  const { kv } = await import(/* webpackIgnore: true */ "@vercel/kv");
   return kv.get<T>(key);
 }
 async function kvSet(key: string, value: unknown): Promise<void> {
-  const { kv } = await import("@vercel/kv");
+  const { kv } = await import(/* webpackIgnore: true */ "@vercel/kv");
   await kv.set(key, value);
 }
 
