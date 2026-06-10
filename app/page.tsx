@@ -138,17 +138,19 @@ function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>v
   },[]);
   useEffect(()=>{fetchDocs();},[fetchDocs]);
 
-  const uploadFiles=async(files:FileList|null)=>{
+  const uploadFiles=async(files:FileList|File[]|null)=>{
     if(!files||!files.length)return;
+    // 立即转为普通数组，避免 FileList 作为 DOM 实时引用在 input reset 后被清空
+    const fileArray=Array.from(files);
     if(fileRef.current)fileRef.current.value="";
 
     setUploading(true);
     let ok=0;
     let fail=0;
-    const total=files.length;
+    const total=fileArray.length;
 
-    for(let i=0;i<files.length;i++){
-      const f=files[i];
+    for(let i=0;i<fileArray.length;i++){
+      const f=fileArray[i];
       setUploadProgress(`正在处理 ${i+1}/${total}：${f.name}`);
 
       if(f.size>10*1024*1024){
@@ -261,10 +263,9 @@ function KBPanel({onToast,onKbChange}:{onToast:(m:string,t:"ok"|"err"|"info")=>v
                 accept=".pdf,.docx,.doc,.txt,.md"
                 style={{display:"none"}}
                 onChange={e=>{
-                  const files=e.target.files;
-                  // 【修复2b】立即清空 value，确保重复选同一文件也能触发 onChange
-                  e.target.value="";
-                  uploadFiles(files);
+                  // 注意：不在此处 reset input.value，FileList 是 DOM 实时引用，
+                  // reset 会立即清空它。uploadFiles 内部 Array.from 后再 reset。
+                  uploadFiles(e.target.files);
                 }}
               />
             </div>
