@@ -1,4 +1,7 @@
 // lib/rag.ts
+// 存储层：Vercel KV（生产）/ globalThis 内存（本地开发）
+// 检测方式：若 KV_REST_API_URL + KV_REST_API_TOKEN 环境变量存在则启用 KV
+
 export interface KBChunk {
   id: string;
   docId: string;
@@ -20,21 +23,42 @@ export interface KBDoc {
   summary: string;
 }
 
+// ── 判断是否启用 KV ────────────────────────────────────────────
+const useKV =
+  typeof process !== "undefined" &&
+  !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+
+const KV_DOCS_KEY   = "kb:docs";
+const KV_CHUNKS_KEY = "kb:chunks";
+
+// ── 本地内存 fallback ──────────────────────────────────────────
 declare global {
   var __ragChunks: KBChunk[] | undefined;
-  var __ragDocs: KBDoc[] | undefined;
+  var __ragDocs: KBDoc[]    | undefined;
 }
 
-function getStore() {
+function memStore() {
   if (!globalThis.__ragChunks) globalThis.__ragChunks = [];
-  if (!globalThis.__ragDocs) globalThis.__ragDocs = [];
+  if (!globalThis.__ragDocs)   globalThis.__ragDocs   = [];
   return { chunks: globalThis.__ragChunks, docs: globalThis.__ragDocs };
 }
+
+// ── KV 操作 ────────────────────────────────────────────────────
+async function kvGet<T>(key: string): Promise<T | null> {
+  const { kv } = await import("@vercel/kv");
+  return kv.get<T>(key);
+}
+async function kvSet(key: string, value: unknown): Promise<void> {
+  const { kv } = await import("@vercel/kv");
+  await kv.set(key, value);
+}
+
+// ── 公共 API（全部 async）─────────────────────────────────────
 
 export function chunkText(
   text: string,
   chunkSize = 400,
-  overlap = 80
+  overlap    = 80
 ): { text: string; charStart: number; charEnd: number }[] {
   const chunks: { text: string; charStart: number; charEnd: number }[] = [];
   const paragraphs = text.split(/\n{2,}/);
@@ -97,46 +121,78 @@ export function cosineSim(a: number[], b: number[]): number {
   return dot;
 }
 
-export function addDocument(doc: KBDoc, rawText: string): void {
-  const store = getStore();
-  removeDocument(doc.id);
-  store.docs.push(doc);
+export async function listDocuments(): Promise<KBDoc[]> {
+  if (!useKV) return memStore().docs;
+  return (await kvGet<KBDoc[]>(KV_DOCS_KEY)) ?? [];
+}
+
+export async function addDocument(doc: KBDoc, rawText: string): Promise<void> {
+  if (!useKV) {
+    // 内存模式
+    const store = memStore();
+    globalThis.__ragDocs   = store.docs.filter(d => d.id !== doc.id);
+    globalThis.__ragChunks = store.chunks.filter(c => c.docId !== doc.id);
+    globalThis.__ragDocs.push(doc);
+    const rawChunks = chunkText(rawText);
+    for (const rc of rawChunks) {
+      globalThis.__ragChunks!.push({
+        id: `${doc.id}-${Math.random().toString(36).slice(2)}`,
+        docId: doc.id, docName: doc.name, docType: doc.type,
+        text: rc.text, vector: textToVector(rc.text),
+        charStart: rc.charStart, charEnd: rc.charEnd,
+      });
+    }
+    return;
+  }
+
+  // KV 模式：读取 → 修改 → 写入
+  const docs   = (await kvGet<KBDoc[]>(KV_DOCS_KEY))     ?? [];
+  const chunks = (await kvGet<KBChunk[]>(KV_CHUNKS_KEY)) ?? [];
+
+  const newDocs   = docs.filter(d => d.id !== doc.id);
+  const newChunks = chunks.filter(c => c.docId !== doc.id);
+  newDocs.push(doc);
 
   const rawChunks = chunkText(rawText);
   for (const rc of rawChunks) {
-    const chunk: KBChunk = {
+    newChunks.push({
       id: `${doc.id}-${Math.random().toString(36).slice(2)}`,
-      docId: doc.id,
-      docName: doc.name,
-      docType: doc.type,
-      text: rc.text,
-      vector: textToVector(rc.text),
-      charStart: rc.charStart,
-      charEnd: rc.charEnd,
-    };
-    store.chunks.push(chunk);
+      docId: doc.id, docName: doc.name, docType: doc.type,
+      text: rc.text, vector: textToVector(rc.text),
+      charStart: rc.charStart, charEnd: rc.charEnd,
+    });
   }
+
+  await kvSet(KV_DOCS_KEY,   newDocs);
+  await kvSet(KV_CHUNKS_KEY, newChunks);
 }
 
-export function removeDocument(docId: string): void {
-  const store = getStore();
-  globalThis.__ragDocs = store.docs.filter(d => d.id !== docId);
-  globalThis.__ragChunks = store.chunks.filter(c => c.docId !== docId);
+export async function removeDocument(docId: string): Promise<void> {
+  if (!useKV) {
+    const store = memStore();
+    globalThis.__ragDocs   = store.docs.filter(d => d.id !== docId);
+    globalThis.__ragChunks = store.chunks.filter(c => c.docId !== docId);
+    return;
+  }
+  const docs   = (await kvGet<KBDoc[]>(KV_DOCS_KEY))     ?? [];
+  const chunks = (await kvGet<KBChunk[]>(KV_CHUNKS_KEY)) ?? [];
+  await kvSet(KV_DOCS_KEY,   docs.filter(d => d.id !== docId));
+  await kvSet(KV_CHUNKS_KEY, chunks.filter(c => c.docId !== docId));
 }
 
-export function listDocuments(): KBDoc[] {
-  return getStore().docs;
-}
+export async function retrieve(query: string, topK = 5): Promise<KBChunk[]> {
+  let chunks: KBChunk[];
+  if (!useKV) {
+    chunks = memStore().chunks;
+  } else {
+    chunks = (await kvGet<KBChunk[]>(KV_CHUNKS_KEY)) ?? [];
+  }
 
-export function retrieve(query: string, topK = 5): KBChunk[] {
-  const store = getStore();
-  if (store.chunks.length === 0) return [];
+  if (chunks.length === 0) return [];
   const qVec = textToVector(query);
-  const scored = store.chunks.map(chunk => ({
-    chunk,
-    score: cosineSim(qVec, chunk.vector),
-  }));
+  const scored = chunks.map(chunk => ({ chunk, score: cosineSim(qVec, chunk.vector) }));
   scored.sort((a, b) => b.score - a.score);
+
   const docCount: Record<string, number> = {};
   const results: KBChunk[] = [];
   for (const { chunk, score } of scored) {

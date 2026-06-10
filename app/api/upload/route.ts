@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       summary,
     };
 
-    addDocument(doc, rawText);
+    await addDocument(doc, rawText);
 
     return NextResponse.json({
       success: true,

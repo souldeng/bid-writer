@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const docs = listDocuments();
+    const docs = await listDocuments();
     return NextResponse.json({ docs });
   } catch (err) {
     console.error("KB list error:", err);

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     let ragSources: string[] = [];
     if (useRag && chapterLabel) {
       const query = `${chapterLabel} ${prompt.slice(0, 200)}`;
-      const chunks = retrieve(query, 6);
+      const chunks = await retrieve(query, 6);
       if (chunks.length > 0) {
         ragContext = buildRagContext(chunks);
         ragSources = [...new Set(chunks.map(c => c.docName))];

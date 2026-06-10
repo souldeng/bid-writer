@@ -11,7 +11,10 @@ export async function extractText(
 
   if (ext === "pdf") {
     try {
-      const pdfParse = (await import("pdf-parse")).default;
+      // 直接引用内部模块，绕过 pdf-parse 入口文件在 Vercel 环境下读取测试文件的已知 bug
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfParse: any = (await import("pdf-parse/lib/pdf-parse.js" as string)).default
+        ?? (await import("pdf-parse/lib/pdf-parse.js" as string));
       const data = await pdfParse(buffer);
       return data.text || "";
     } catch (e) {
